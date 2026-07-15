@@ -149,7 +149,10 @@
             }
         }
         function touch_rect(rect) {
-            return player.x + player.size > rect.x && player.x < rect.x + rect.w && player.y + player.size > rect.y && player.y < rect.y + rect.h
+            return rect_touch_rect(player, rect)
+        }
+        function touch_screen(rect) {
+            return rect.x + rect.w > 0 && rect.y + rect.h > 0 && rect.x < canvas.width && rect.y < canvas.height
         }
         function rect_touch_rect(rect1, rect2) {
             return rect1.x + rect1.size > rect2.x && rect1.x < rect2.x + rect2.w && rect1.y + rect1.size > rect2.y && rect1.y < rect2.y + rect2.h
@@ -186,19 +189,23 @@
         function draw_grass(platform) {
             const x = platform.x - camera.x
             const y = platform.y - camera.y
-            ctx.beginPath()
-            ctx.strokeStyle = "#00dd00"
-            ctx.lineCap = 'round';
-            ctx.lineWidth = thickness
-            ctx.moveTo(x, y + thickness / 2)
-            ctx.lineTo(x + platform.w, y + thickness / 2)
-            ctx.stroke()
+            if (touch_screen({ x: x, y: y, w: platform.w, h: platform.h })) {
+                ctx.beginPath()
+                ctx.strokeStyle = "#00dd00"
+                ctx.lineCap = 'round';
+                ctx.lineWidth = thickness
+                ctx.moveTo(x, y + thickness / 2)
+                ctx.lineTo(x + platform.w, y + thickness / 2)
+                ctx.stroke()
+            }
         }
         function draw_dirt(platform) {
             const x = platform.x - camera.x
             const y = platform.y - camera.y
-            ctx.fillStyle = "#882200"
-            ctx.fillRect(x, y + thickness, platform.w, platform.h - thickness)
+            if (touch_screen({ x: x, y: y, w: platform.w, h: platform.h })) {
+                ctx.fillStyle = "#882200"
+                ctx.fillRect(x, y + thickness, platform.w, platform.h - thickness)
+            }
         }
         function draw_spike(spike) {
             const x = spike.x - camera.x
@@ -265,22 +272,22 @@
         function update_enemy(enemy) {
             enemy.y_speed += 1.5
             enemy.y += enemy.y_speed
-            enemy.x+=enemy.x_speed
+            enemy.x += enemy.x_speed
             const last_speed_x = enemy.x_speed
             for (let i = 0; i < platforms.length; i++) {
                 const platform = platforms[i]
                 collide_platform(enemy, platform)
             }
-            if (enemy.x_speed==0){
-                enemy.x_speed=0-last_speed_x
+            if (enemy.x_speed == 0) {
+                enemy.x_speed = 0 - last_speed_x
             }
-            if (enemy.x>enemy.max_x){
-                enemy.x_speed=0-enemy.x_speed
-                enemy.x=enemy.max_x
+            if (enemy.x > enemy.max_x) {
+                enemy.x_speed = 0 - enemy.x_speed
+                enemy.x = enemy.max_x
             }
-            if (enemy.x<enemy.min_x){
-                enemy.x_speed=0-enemy.x_speed
-                enemy.x=enemy.min_x
+            if (enemy.x < enemy.min_x) {
+                enemy.x_speed = 0 - enemy.x_speed
+                enemy.x = enemy.min_x
             }
         }
         function update() {
@@ -331,18 +338,18 @@
                 const enemy = enemies[i]
                 update_enemy(enemy)
             }
-            
+
             for (let i = 0; i < enemies.length; i++) {
                 const enemy = enemies[i]
-                if (touch_rect({x:enemy.x, y:enemy.y, w:enemy.size, h:enemy.size})){
-                    if (!(player.y + player.size - player.y_speed > enemy.y && player.y - player.y_speed < enemy.y + enemy.size)){
+                if (touch_rect({ x: enemy.x, y: enemy.y, w: enemy.size, h: enemy.size })) {
+                    if (!(player.y + player.size - player.y_speed > enemy.y && player.y - player.y_speed < enemy.y + enemy.size)) {
                         enemies.splice(i, 1)
                         i--
-                    }else{
-                    player.x = spawn.x
-                    player.y = spawn.y
-                    player.x_speed = 0
-                    player.y_speed = 0
+                    } else {
+                        player.x = spawn.x
+                        player.y = spawn.y
+                        player.x_speed = 0
+                        player.y_speed = 0
                     }
                 }
             }
