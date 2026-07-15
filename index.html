@@ -126,6 +126,17 @@
                 taken: false,
             },
         ]
+        const enemies = [
+            {
+                x: 600,
+                y: -50,
+                size: 60,
+                y_speed: 0,
+                x_speed: 5,
+                min_x: 400,
+                max_x: 700,
+            },
+        ]
         function rotate_point(point, orientation) {
             if (orientation == 1) {
                 return point
@@ -140,25 +151,30 @@
         function touch_rect(rect) {
             return player.x + player.size > rect.x && player.x < rect.x + rect.w && player.y + player.size > rect.y && player.y < rect.y + rect.h
         }
-        function collide_platform(platform) {
-            if (touch_rect(platform)) {
-                if (!(player.y + player.size - player.y_speed > platform.y && player.y - player.y_speed < platform.y + platform.h)) {
-                    if (player.y_speed >= 0) {
-                        player.y = platform.y - player.size
-                        player.y_speed = 0
-                        can_jump = true
+        function rect_touch_rect(rect1, rect2) {
+            return rect1.x + rect1.size > rect2.x && rect1.x < rect2.x + rect2.w && rect1.y + rect1.size > rect2.y && rect1.y < rect2.y + rect2.h
+        }
+        function collide_platform(obj, platform) {
+            if (rect_touch_rect(obj, platform)) {
+                if (!(obj.y + obj.size - obj.y_speed > platform.y && obj.y - obj.y_speed < platform.y + platform.h)) {
+                    if (obj.y_speed >= 0) {
+                        obj.y = platform.y - obj.size
+                        obj.y_speed = 0
+                        if (obj == player) {
+                            can_jump = true
+                        }
                     } else {
-                        player.y = platform.y + platform.h
-                        player.y_speed = 0
+                        obj.y = platform.y + platform.h
+                        obj.y_speed = 0
                     }
                 }
-                if (!(player.x + player.size - player.x_speed > platform.x && player.x - player.x_speed < platform.x + platform.w)) {
-                    if (player.x_speed > 0) {
-                        player.x = platform.x - player.size
-                        player.x_speed = 0
+                if (!(obj.x + obj.size - obj.x_speed > platform.x && obj.x - obj.x_speed < platform.x + platform.w)) {
+                    if (obj.x_speed > 0) {
+                        obj.x = platform.x - obj.size
+                        obj.x_speed = 0
                     } else {
-                        player.x = platform.x + platform.w
-                        player.x_speed = 0
+                        obj.x = platform.x + platform.w
+                        obj.x_speed = 0
                     }
                 }
             }
@@ -215,6 +231,9 @@
             ctx.lineTo(x - 20, y - 60)
             ctx.stroke()
         }
+        function draw_enemy(enemy) {
+            ctx.fillRect(enemy.x - camera.x, enemy.y - camera.y, enemy.size, enemy.size)
+        }
         function draw() {
             ctx.fillStyle = "#0099ff"
             ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -237,6 +256,32 @@
                 const spike = spikes[i]
                 draw_spike(spike)
             }
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i]
+                draw_enemy(enemy)
+            }
+
+        }
+        function update_enemy(enemy) {
+            enemy.y_speed += 1.5
+            enemy.y += enemy.y_speed
+            enemy.x+=enemy.x_speed
+            const last_speed_x = enemy.x_speed
+            for (let i = 0; i < platforms.length; i++) {
+                const platform = platforms[i]
+                collide_platform(enemy, platform)
+            }
+            if (enemy.x_speed==0){
+                enemy.x_speed=0-last_speed_x
+            }
+            if (enemy.x>enemy.max_x){
+                enemy.x_speed=0-enemy.x_speed
+                enemy.x=enemy.max_x
+            }
+            if (enemy.x<enemy.min_x){
+                enemy.x_speed=0-enemy.x_speed
+                enemy.x=enemy.min_x
+            }
         }
         function update() {
             if (keys.right) {
@@ -253,7 +298,7 @@
             player.x += player.x_speed
             for (let i = 0; i < platforms.length; i++) {
                 const platform = platforms[i]
-                collide_platform(platform)
+                collide_platform(player, platform)
             }
             for (let i = 0; i < spikes.length; i++) {
                 const spike = spikes[i]
@@ -280,6 +325,25 @@
                     checkpoint.taken = true
                     spawn.x = checkpoint.x - player.size / 2
                     spawn.y = checkpoint.y - player.size
+                }
+            }
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i]
+                update_enemy(enemy)
+            }
+            
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i]
+                if (touch_rect({x:enemy.x, y:enemy.y, w:enemy.size, h:enemy.size})){
+                    if (!(player.y + player.size - player.y_speed > enemy.y && player.y - player.y_speed < enemy.y + enemy.size)){
+                        enemies.splice(i, 1)
+                        i--
+                    }else{
+                    player.x = spawn.x
+                    player.y = spawn.y
+                    player.x_speed = 0
+                    player.y_speed = 0
+                    }
                 }
             }
 
