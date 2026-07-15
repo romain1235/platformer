@@ -177,7 +177,11 @@
         function draw_checkpoint(checkpoint){
             const x=checkpoint.x-camera.x
             const y=checkpoint.y-camera.y
-            ctx.fillStyle="green"
+            if (checkpoint.taken){
+                ctx.fillStyle="green"
+            }else{
+                ctx.fillStyle="red"
+            }
             ctx.fillRect(x-20,y-60,40,40)
             ctx.beginPath()
             ctx.strokeStyle="black"
@@ -235,6 +239,15 @@
                     player.y_speed=0
                 }
             }
+            for (let i = 0; i < checkpoints.length; i++){
+                const checkpoint = checkpoints[i]
+                if (touch_rect({x:checkpoint.x-20, y:checkpoint.y-60, w:40, h:60}) && !checkpoint.taken){
+                    checkpoint.taken=true
+                    spawn.x=checkpoint.x-player.size/2
+                    spawn.y=checkpoint.y-player.size
+                }
+            }
+            
             if (can_jump && keys.up){
                 player.y_speed=-30
             }
